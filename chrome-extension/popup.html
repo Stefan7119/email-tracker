@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{width:320px;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;background:#0a0a0f;color:#e8e8f0}
+  .header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .logo{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#00d4aa,#00a885);
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0a0a0f}
+  h1{font-size:16px;font-weight:600}
+  h1 span{color:#7a7a90;font-weight:400;font-size:12px;display:block}
+  .status{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;margin-bottom:16px;font-size:12px}
+  .status.active{background:rgba(0,212,170,0.1);color:#00d4aa;border:1px solid rgba(0,212,170,0.2)}
+  .status.inactive{background:rgba(255,170,64,0.1);color:#ffaa40;border:1px solid rgba(255,170,64,0.2)}
+  .dot{width:6px;height:6px;border-radius:50%}
+  .dot.on{background:#00d4aa}.dot.off{background:#ffaa40}
+  label{display:block;font-size:11px;color:#7a7a90;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-family:monospace}
+  input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #2a2a3a;background:#12121a;color:#e8e8f0;font-size:13px;outline:none;font-family:monospace}
+  input:focus{border-color:#00d4aa}
+  input::placeholder{color:#4a4a5a}
+  .help{font-size:11px;color:#7a7a90;margin-top:6px;line-height:1.4}
+  .btn{width:100%;padding:10px;border-radius:8px;border:none;background:#00d4aa;color:#0a0a0f;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;transition:background 0.2s}
+  .btn:hover{background:#00eabc}
+  .btn.saved{background:#1a1a26;color:#00d4aa;border:1px solid rgba(0,212,170,0.3)}
+  .stats{margin-top:16px;padding-top:12px;border-top:1px solid #2a2a3a}
+  .stats a{display:block;text-align:center;color:#5b8def;font-size:12px;text-decoration:none}
+  .stats a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+  <div class="header"><div class="logo">T</div><h1>Email Tracker<span>Chrome Extension</span></h1></div>
+  <div id="status" class="status inactive"><div class="dot off" id="statusDot"></div><span id="statusText">Not configured</span></div>
+  <label>Tracker Server URL</label>
+  <input type="text" id="serverUrl" placeholder="https://email-tracker-941n.onrender.com"/>
+  <div class="help">Enter the URL of your email tracker dashboard.</div>
+  <button class="btn" id="saveBtn" onclick="saveUrl()">Save</button>
+  <div class="stats"><a href="#" id="dashboardLink" onclick="openDashboard()">Open Dashboard →</a></div>
+<script>
+const urlInput=document.getElementById('serverUrl'),statusDiv=document.getElementById('status'),statusDot=document.getElementById('statusDot'),statusText=document.getElementById('statusText'),saveBtn=document.getElementById('saveBtn');
+chrome.storage.sync.get(['tracker_base_url'],(r)=>{const u=r.tracker_base_url||'';urlInput.value=u;if(u)checkServer(u)});
+async function saveUrl(){let u=urlInput.value.trim().replace(/\/+$/,'');if(!u){setStatus('inactive','Please enter a URL');return}
+if(!u.startsWith('http'))u='https://'+u;
+chrome.storage.sync.set({tracker_base_url:u},()=>{saveBtn.textContent='Saved!';saveBtn.className='btn saved';setTimeout(()=>{saveBtn.textContent='Save';saveBtn.className='btn'},2000);checkServer(u)})}
+async function checkServer(u){try{const r=await fetch(u+'/api/emails');if(r.ok)setStatus('active','Connected — tracking all Gmail sends');else setStatus('inactive','Server error')}catch(e){setStatus('inactive','Cannot reach server')}}
+function setStatus(t,txt){statusDiv.className='status '+t;statusDot.className='dot '+(t==='active'?'on':'off');statusText.textContent=txt}
+function openDashboard(){const u=urlInput.value.trim();if(u)chrome.tabs.create({url:u})}
+</script>
+</body>
+</html>
